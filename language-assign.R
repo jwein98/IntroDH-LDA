@@ -9,9 +9,8 @@ library(tidyverse)
 library(pracma)
 library(koRpus)
 
+split_text <- function(filename) {
 split_at <- 1000
-
-filename <- file.path(getwd(), "txts", "be-1-110.txt")
 
 file_base <- filename %>% basename %>% str_replace(
     pattern = "[.]txt$",
@@ -55,7 +54,7 @@ if (! dir.exists(split_directory)){
         writeLines(part_lines, part_name)
     }
 )
-
+}
 ## compute what fraction of the `words` are in the stopword list
 ##  of the `language`
 language_match <- function (words, language) {
@@ -71,18 +70,28 @@ language_best_match <- function (words, languages) {
     ]]
 }
 
-parts <- Sys.glob(file.path(split_directory, "*.txt"))
+assign_language <- function(country_code = "be") {
+    split_directory <- file.path(getwd(), "split")   
+    parts <- Sys.glob(file.path(split_directory, sprintf("%s*.txt",
+                                                         country_code)))
 
-sample_assignment <- data.frame(
-    filename = parts,
-    language = parts %>% map(
-        function (filename) {
-            language_best_match(
-                tokenize(filename, tag = FALSE),
-                c("en", "fr", "nl")
-            )
-        }
-    ) %>% unlist
-)
+    sample_assignment <- data.frame(
+        filename = parts,
+        language = parts %>% map(
+            function (filename) {
+                language_best_match(
+                    tokenize(filename, tag = FALSE),
+                    c("en", "fr", "nl")
+                )
+            }
+            ) %>% unlist
+    )
+    for ( i in 1:length(sample_assignment$filename)) {
+        file.rename(sample_assignment$filename[i],
+                    str_replace(sample_assignment$filename[i],
+                                "\\.txt",
+                                sprintf("-%s.txt",sample_assignment$language[i])))
+}
 
 sample_assignment
+}

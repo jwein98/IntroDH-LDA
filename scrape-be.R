@@ -117,17 +117,18 @@ pdf_to_txt <- function(infile, outfile, nth, total, side) {
         unlist %>%
         paste(collapse=" ") %>%
         unhyphenate %>%
-        trimws %>%
-        str_split(" ") %>%
-        unlist %>%
-        split(., ceiling(seq_along(.) / 1000))
+        trimws 
+        ## str_split(" ") %>%
+        ## unlist %>%
+        ## split(., ceiling(seq_along(.) / 1000))
 
-        lapply(1:length(txt_output), function(x) {
-            write_file(x = paste(txt_output[[x]], collapse=" "),
-                       file = str_replace(outfile, "\\.txt",
-                                          sprintf("-%s-%03d.txt",side, x))
-                       )
-        })
+        ## lapply(1:length(txt_output), function(x) {
+        ##     write_file(x = paste(txt_output[[x]], collapse=" "),
+        ##                file = str_replace(outfile, "\\.txt",
+        ##                                   sprintf("-%s-%03d.txt",side, x))
+        ##                )
+    ## })
+    write_lines(txt_output, file = str_replace(outfile, "\\.txt", sprintf("-%s.txt", side)))
         return(sprintf("[%3d/%3d] Converted %s -> %s",
                        nth,total,infile,outfile))}
 
@@ -151,6 +152,19 @@ convert_results <-
 
 writeLines(unlist(convert_results), file.path(result_directory, "be-convert_results.txt"))
 
+##----------------------------------------------------------
+## Assigning languages
+
+source("language-assign.R")
+
+txt_files <- Sys.glob(file.path(txt_directory, "be*txt"))
+splits <-
+    future_lapply(future.seed=TRUE,
+                  txt_files, split_text)
+
+
+language_assignments <- assign_language("be")
+                                      
 ## 1. period: French left, Dutch right
 ## 2. period: French right, Dutch left
 ## 3. period: French left, Dutch right
@@ -161,12 +175,11 @@ writeLines(unlist(convert_results), file.path(result_directory, "be-convert_resu
 ## First period is more problematic due to its sentence-by-sentence
 ## translation
 
-id <- c(#Sys.glob(file.path(txt_directory, "be-1-*-left*.txt")),
-        Sys.glob(file.path(txt_directory, "be-2-*-right*.txt")),
-        Sys.glob(file.path(txt_directory, "be-3-*-left*.txt")),
-        Sys.glob(file.path(txt_directory, "be-4-*-right*.txt")),
-        Sys.glob(file.path(txt_directory, "be-5-*-left*.txt")),
-        Sys.glob(file.path(txt_directory, "be-6-*-right*.txt")))
+id <- c(Sys.glob(file.path(getwd(),"split", "be-2*fr.txt")),
+        Sys.glob(file.path(getwd(),"split", "be-3*fr.txt")),
+        Sys.glob(file.path(getwd(),"split", "be-4*fr.txt")),
+        Sys.glob(file.path(getwd(),"split", "be-5*fr.txt")),
+        Sys.glob(file.path(getwd(),"split", "be-6*fr.txt")))
 
 data <- sapply(id, read_file)
 
